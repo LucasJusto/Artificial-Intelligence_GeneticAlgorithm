@@ -12,7 +12,7 @@ public class Main {
     static int[] heuristicPointsForPaths = new int[populationSize];
     static int maxPoints = 500;//if a cromossom has this much points we found our answer
     static int maxGenerations = 500;
-    static int mutationPercentage = 30;//mutationPercentage% chance of mutate a cromossom of new generations
+    static int mutationPercentage = 35;//mutationPercentage% chance of mutate a cromossom of new generations
 
     public static void main(String[] args) throws FileNotFoundException{
         labyrinth = readLabyrinth();
@@ -59,19 +59,36 @@ public class Main {
                         nextGeneration.add(crossover(parent2, parent1));
                     }
                 }
-                //mutating
+                //randomly mutating others
                 Random generator = new Random();
-                for (ArrayList<Point> path : nextGeneration) {
+                for (ArrayList<Point> path : paths) {
                     if (mutationPercentage < generator.nextInt(100)) {
-                        path = mutate(path);
+                       path = mutate(path);
                     }
                 }
+                printPath(elitism());
+                 System.out.println("Heuristic: " + heuristic(elitism()));
                 //after crossover and mutations we set current generation = nextGeneration
                 paths = nextGeneration;
             }
         }
         //printing solution after getting out of the while through the break command.
         printPath(solution);
+    }
+
+    public static ArrayList<Point> filter(ArrayList<Point> path) {
+        ArrayList<Point> filteredPath = new ArrayList<Point>();
+        boolean didntFindGoal = true;
+        int i = 0;
+        while(didntFindGoal) {
+            filteredPath.add(path.get(i));
+            if (isGoal(path.get(i))) {
+                didntFindGoal = false;
+            }
+            i++;
+        }
+
+        return filteredPath;
     }
 
     public static ArrayList<Point> mutate(ArrayList<Point> path) {
@@ -92,6 +109,7 @@ public class Main {
         int jBeforeFirstWall = path.get(firstWallIndex-1).j;
         int iAtFirstWall = path.get(firstWallIndex).i;
         int jAtFirstWall = path.get(firstWallIndex).j;
+        pathChar.remove(firstWallIndex-1);
         if (iBeforeFirstWall < labyrinthSize-1) {
             if (labyrinth[iBeforeFirstWall+1][jBeforeFirstWall] == '0' || labyrinth[iBeforeFirstWall+1][jBeforeFirstWall] == 'S') {
                 pathChar.add(firstWallIndex-1, 'D');
@@ -202,15 +220,28 @@ public class Main {
         if (containsGoal(path)) {
             points += maxPoints;
         }
-        points -= wallsCount(path);
+        points -= 3 * wallsCount(path);
+        points -= 5 * invalidPoints(path);
         return points;
+    }
+
+    public static int invalidPoints(ArrayList<Point> path) {
+        int invalidPoints = 0;
+        for (Point p : path) {
+            if ((p.i < 0 || p.i > labyrinthSize-1) || (p.j < 0 || p.j > labyrinthSize-1)) {
+                invalidPoints++;
+            }
+        }
+        return invalidPoints;
     }
 
     public static boolean containsGoal(ArrayList<Point> path) {
         for (int i = 0; i < path.size(); i++) {
             Point point = path.get(i);
-            if (labyrinth[point.i][point.j] == 'S') {
-                return true;
+            if ((point.i >= 0 && point.i < labyrinthSize) && (point.j >= 0 && point.j < labyrinthSize)) {
+                if (labyrinth[point.i][point.j] == 'S') {
+                    return true;
+                }
             }
         }
         return false;
@@ -220,8 +251,10 @@ public class Main {
         int wallsCount = 0;
         for (int i = 0; i < path.size(); i++) {
             Point point = path.get(i);
-            if (labyrinth[point.i][point.j] == '1') {
-                wallsCount++;
+            if ((point.i >= 0 && point.i < labyrinthSize) && (point.j >= 0 && point.j < labyrinthSize)) {
+                if (labyrinth[point.i][point.j] == '1') {
+                    wallsCount++;
+                }
             }
         }
         return wallsCount;
@@ -435,5 +468,12 @@ public class Main {
             System.out.print(point + "  ");
         }
         System.out.println("");
+    }
+
+    public static void printPath(ArrayList<Point> path, int index) {
+        for (Point point : path) {
+            System.out.print(point + "  ");
+        }
+        System.out.println(" Heuristic: " + heuristicPointsForPaths[index]);
     }
 }
