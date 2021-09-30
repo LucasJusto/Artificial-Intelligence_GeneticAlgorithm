@@ -33,6 +33,8 @@ public class Main {
         while(solution.size() == 0 && currentGeneration <= maxGenerations) {
             System.out.println("At generation: " + currentGeneration);
             fillHeuristicPointsArray();
+            printPath(elitism());
+            System.out.println("Heuristic: " + heuristic(elitism()));
             int finish = solutionPositionInPaths();
             //if finish return is higher than 0 we found a solution and will finish the algorithm printing solution
             if (finish > 0) {
@@ -61,13 +63,11 @@ public class Main {
                 }
                 //randomly mutating others
                 Random generator = new Random();
-                for (ArrayList<Point> path : paths) {
+                for (ArrayList<Point> path : nextGeneration) {
                     if (mutationPercentage < generator.nextInt(100)) {
-                       path = mutate(path);
+                        path = mutate(path);
                     }
                 }
-                printPath(elitism());
-                 System.out.println("Heuristic: " + heuristic(elitism()));
                 //after crossover and mutations we set current generation = nextGeneration
                 paths = nextGeneration;
             }
