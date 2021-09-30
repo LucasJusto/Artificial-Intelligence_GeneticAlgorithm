@@ -93,11 +93,19 @@ public class Main {
 
     public static ArrayList<Point> mutate(ArrayList<Point> path) {
         //search for the first wall at this path
-        int firstWallIndex = 0;
-        for (int i = 0; i < path.size(); i++) {
-            if (labyrinth[path.get(i).i][path.get(i).j] == '1') {
-                firstWallIndex = i;
-                break;
+        int wallIndex = 0;
+        int maxTries = 50;
+        int currentTries = 0;
+        Random generator = new Random();
+        while (wallIndex == 0 && currentTries < maxTries) {
+            currentTries++;
+            int randomIndex = generator.nextInt(path.size());
+            Point point = path.get(randomIndex);
+            if ((point.i >= 0 && point.i < labyrinthSize) && (point.j >= 0 && point.j < labyrinthSize)){
+                if (labyrinth[point.i][point.j] == '1') {
+                    wallIndex = randomIndex;
+                    break;
+                }
             }
         }
 
@@ -105,50 +113,57 @@ public class Main {
         ArrayList<Character> pathChar = fromPointsToChars(path);
 
         //change the instruction at that first wall for a valid one
-        int iBeforeFirstWall = path.get(firstWallIndex-1).i;
-        int jBeforeFirstWall = path.get(firstWallIndex-1).j;
-        int iAtFirstWall = path.get(firstWallIndex).i;
-        int jAtFirstWall = path.get(firstWallIndex).j;
-        pathChar.remove(firstWallIndex-1);
-        if (iBeforeFirstWall < labyrinthSize-1) {
-            if (labyrinth[iBeforeFirstWall+1][jBeforeFirstWall] == '0' || labyrinth[iBeforeFirstWall+1][jBeforeFirstWall] == 'S') {
-                pathChar.add(firstWallIndex-1, 'D');
-                System.out.println("mutated path from (" + iAtFirstWall + ", " + jAtFirstWall + ") = " 
-                + labyrinth[iAtFirstWall][jAtFirstWall] + "; to (" + (iBeforeFirstWall+1) + ", " + 
-                (jBeforeFirstWall) + ") = " + labyrinth[iBeforeFirstWall+1][jBeforeFirstWall]);
+        if (wallIndex > 0) {
+            int iBeforeFirstWall = path.get(wallIndex-1).i;
+            int jBeforeFirstWall = path.get(wallIndex-1).j;
+            int iAtFirstWall = path.get(wallIndex).i;
+            int jAtFirstWall = path.get(wallIndex).j;
+            pathChar.remove(wallIndex-1);
+            if ((iBeforeFirstWall < 0 || iBeforeFirstWall > labyrinthSize-1) || (jBeforeFirstWall < 0 || jBeforeFirstWall > labyrinthSize-1)) {
+                //return the path converted to points again
+                System.out.println("Couldnt find a wall to mutate in " + maxTries + " tries.");
                 return fromCharsToPoints(pathChar);
             }
-        }
-        if (iBeforeFirstWall > 0) {
-            if (labyrinth[iBeforeFirstWall-1][jBeforeFirstWall] == '0' || labyrinth[iBeforeFirstWall-1][jBeforeFirstWall] == 'S') {
-                pathChar.add(firstWallIndex-1, 'U');
-                System.out.println("mutated path from (" + iAtFirstWall + ", " + jAtFirstWall + ") = " 
-                + labyrinth[iAtFirstWall][jAtFirstWall] + "; to (" + (iBeforeFirstWall-1) + ", " + 
-                (jBeforeFirstWall) + ") = " + labyrinth[iBeforeFirstWall-1][jBeforeFirstWall]);
-                return fromCharsToPoints(pathChar);
+            if (iBeforeFirstWall < labyrinthSize-1) {
+                if (labyrinth[iBeforeFirstWall+1][jBeforeFirstWall] == '0' || labyrinth[iBeforeFirstWall+1][jBeforeFirstWall] == 'S') {
+                    pathChar.add(wallIndex-1, 'D');
+                    System.out.println("mutated path from (" + iAtFirstWall + ", " + jAtFirstWall + ") = " 
+                    + labyrinth[iAtFirstWall][jAtFirstWall] + "; to (" + (iBeforeFirstWall+1) + ", " + 
+                    (jBeforeFirstWall) + ") = " + labyrinth[iBeforeFirstWall+1][jBeforeFirstWall]);
+                    return fromCharsToPoints(pathChar);
+                }
             }
-        }
-        if (jBeforeFirstWall < labyrinthSize-1) {
-            if (labyrinth[iBeforeFirstWall][jBeforeFirstWall+1] == '0' || labyrinth[iBeforeFirstWall][jBeforeFirstWall+1] == 'S') {
-                pathChar.add(firstWallIndex-1, 'R');
-                System.out.println("mutated path from (" + iAtFirstWall + ", " + jAtFirstWall + ") = " 
-                + labyrinth[iAtFirstWall][jAtFirstWall] + "; to (" + (iBeforeFirstWall) + ", " + 
-                (jBeforeFirstWall+1) + ") = " + labyrinth[iBeforeFirstWall][jBeforeFirstWall+1]);
-                return fromCharsToPoints(pathChar);
+            if (iBeforeFirstWall > 0) {
+                if (labyrinth[iBeforeFirstWall-1][jBeforeFirstWall] == '0' || labyrinth[iBeforeFirstWall-1][jBeforeFirstWall] == 'S') {
+                    pathChar.add(wallIndex-1, 'U');
+                    System.out.println("mutated path from (" + iAtFirstWall + ", " + jAtFirstWall + ") = " 
+                    + labyrinth[iAtFirstWall][jAtFirstWall] + "; to (" + (iBeforeFirstWall-1) + ", " + 
+                    (jBeforeFirstWall) + ") = " + labyrinth[iBeforeFirstWall-1][jBeforeFirstWall]);
+                    return fromCharsToPoints(pathChar);
+                }
             }
-        }
-        if (jBeforeFirstWall > 0) {
-            if (labyrinth[iBeforeFirstWall][jBeforeFirstWall-1] == '0' || labyrinth[iBeforeFirstWall][jBeforeFirstWall-1] == 'S') {
-                pathChar.add(firstWallIndex-1, 'L');
-                System.out.println("mutated path from (" + iAtFirstWall + ", " + jAtFirstWall + ") = " 
-                + labyrinth[iAtFirstWall][jAtFirstWall] + "; to (" + (iBeforeFirstWall) + ", " + 
-                (jBeforeFirstWall-1) + ") = " + labyrinth[iBeforeFirstWall][jBeforeFirstWall-1]);
-                return fromCharsToPoints(pathChar);
+            if (jBeforeFirstWall < labyrinthSize-1) {
+                if (labyrinth[iBeforeFirstWall][jBeforeFirstWall+1] == '0' || labyrinth[iBeforeFirstWall][jBeforeFirstWall+1] == 'S') {
+                    pathChar.add(wallIndex-1, 'R');
+                    System.out.println("mutated path from (" + iAtFirstWall + ", " + jAtFirstWall + ") = " 
+                    + labyrinth[iAtFirstWall][jAtFirstWall] + "; to (" + (iBeforeFirstWall) + ", " + 
+                    (jBeforeFirstWall+1) + ") = " + labyrinth[iBeforeFirstWall][jBeforeFirstWall+1]);
+                    return fromCharsToPoints(pathChar);
+                }
+            }
+            if (jBeforeFirstWall > 0) {
+                if (labyrinth[iBeforeFirstWall][jBeforeFirstWall-1] == '0' || labyrinth[iBeforeFirstWall][jBeforeFirstWall-1] == 'S') {
+                    pathChar.add(wallIndex-1, 'L');
+                    System.out.println("mutated path from (" + iAtFirstWall + ", " + jAtFirstWall + ") = " 
+                    + labyrinth[iAtFirstWall][jAtFirstWall] + "; to (" + (iBeforeFirstWall) + ", " + 
+                    (jBeforeFirstWall-1) + ") = " + labyrinth[iBeforeFirstWall][jBeforeFirstWall-1]);
+                    return fromCharsToPoints(pathChar);
+                }
             }
         }
 
         //return the path converted to points again
-        System.out.println("Mutate error.");
+        System.out.println("Couldnt find a wall to mutate in " + maxTries + " tries.");
         return fromCharsToPoints(pathChar);
     }
 
