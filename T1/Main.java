@@ -9,18 +9,222 @@ public class Main {
     static char[][] labyrinth;
     static int populationSize = 100;
     static ArrayList<ArrayList<Point>> paths = new ArrayList<ArrayList<Point>>();
+    static int[] heuristicPointsForPaths = new int[populationSize];
+    static int maxPoints = 500;//if a cromossom has this much points we found our answer
+    static int maxGenerations = 500;
+    static int mutationPercentage = 30;//mutationPercentage% chance of mutate a cromossom of new generations
 
     public static void main(String[] args) throws FileNotFoundException{
         labyrinth = readLabyrinth();
+        runGeneticAlgorithm();
+    }
+
+    public static void runGeneticAlgorithm() {
+        //create first generation
         paths = generateFirstGeneration();
-        System.out.println(populationSize);
-        System.out.println(paths.size());
-        for (ArrayList<Point> path : paths) {
-            for (Point point : path) {
-                System.out.print(point + "   ");
+
+        //set solution as an empty array (temporarily)
+        ArrayList<Point> solution = new ArrayList<Point>();
+
+        //seting the generation to first
+        int currentGeneration = 1;
+
+        //while we don't have a solution and didnt reach maxGeneration number, iterate to find a solution.
+        while(solution.size() == 0 && currentGeneration <= maxGenerations) {
+            System.out.println("At generation: " + currentGeneration);
+            fillHeuristicPointsArray();
+            int finish = solutionPositionInPaths();
+            //if finish return is higher than 0 we found a solution and will finish the algorithm printing solution
+            if (finish > 0) {
+                System.out.print("Solution found at position " + finish + ":");
+                solution = paths.get(finish);
+                break;
             }
-            System.out.println("");
+            //else we will do the crossover and mutations to generate new generation
+            else{
+                currentGeneration++;
+                ArrayList<ArrayList<Point>> nextGeneration = new ArrayList<ArrayList<Point>>();
+                //carrying the best cromossom to next generation
+                nextGeneration.add(elitism());
+
+                //crossover to fill the rest of next generation
+                while(nextGeneration.size() < populationSize){
+                    ArrayList<Point> parent1 = tournament();
+                    ArrayList<Point> parent2 = tournament();
+                    //add the first half of parent1 + the last half of parent 2 to next generation
+                    nextGeneration.add(crossover(parent1, parent2));
+                    if (nextGeneration.size() < populationSize) {
+                        //if the last addition didnt completed the maxPopulationSize...
+                        //we also add the first half of parent2 + the last half of parent 1 to next generation
+                        nextGeneration.add(crossover(parent2, parent1));
+                    }
+                }
+                //mutating
+                Random generator = new Random();
+                for (ArrayList<Point> path : nextGeneration) {
+                    if (mutationPercentage < generator.nextInt(100)) {
+                        path = mutate(path);
+                    }
+                }
+                //after crossover and mutations we set current generation = nextGeneration
+                paths = nextGeneration;
+            }
         }
+        //printing solution after getting out of the while through the break command.
+        printPath(solution);
+    }
+
+    public static ArrayList<Point> mutate(ArrayList<Point> path) {
+        //search for the first wall at this path
+        int firstWallIndex = 0;
+        for (int i = 0; i < path.size(); i++) {
+            if (labyrinth[path.get(i).i][path.get(i).j] == '1') {
+                firstWallIndex = i;
+                break;
+            }
+        }
+
+        //convert the path to instructions (up, down, right, left)
+        ArrayList<Character> pathChar = fromPointsToChars(path);
+
+        //change the instruction at that first wall for a valid one
+        int iBeforeFirstWall = path.get(firstWallIndex-1).i;
+        int jBeforeFirstWall = path.get(firstWallIndex-1).j;
+        int iAtFirstWall = path.get(firstWallIndex).i;
+        int jAtFirstWall = path.get(firstWallIndex).j;
+        if (iBeforeFirstWall < labyrinthSize-1) {
+            if (labyrinth[iBeforeFirstWall+1][jBeforeFirstWall] == '0' || labyrinth[iBeforeFirstWall+1][jBeforeFirstWall] == 'S') {
+                pathChar.add(firstWallIndex-1, 'D');
+                System.out.println("mutated path from (" + iAtFirstWall + ", " + jAtFirstWall + ") = " 
+                + labyrinth[iAtFirstWall][jAtFirstWall] + "; to (" + (iBeforeFirstWall+1) + ", " + 
+                (jBeforeFirstWall) + ") = " + labyrinth[iBeforeFirstWall+1][jBeforeFirstWall]);
+                return fromCharsToPoints(pathChar);
+            }
+        }
+        if (iBeforeFirstWall > 0) {
+            if (labyrinth[iBeforeFirstWall-1][jBeforeFirstWall] == '0' || labyrinth[iBeforeFirstWall-1][jBeforeFirstWall] == 'S') {
+                pathChar.add(firstWallIndex-1, 'U');
+                System.out.println("mutated path from (" + iAtFirstWall + ", " + jAtFirstWall + ") = " 
+                + labyrinth[iAtFirstWall][jAtFirstWall] + "; to (" + (iBeforeFirstWall-1) + ", " + 
+                (jBeforeFirstWall) + ") = " + labyrinth[iBeforeFirstWall-1][jBeforeFirstWall]);
+                return fromCharsToPoints(pathChar);
+            }
+        }
+        if (jBeforeFirstWall < labyrinthSize-1) {
+            if (labyrinth[iBeforeFirstWall][jBeforeFirstWall+1] == '0' || labyrinth[iBeforeFirstWall][jBeforeFirstWall+1] == 'S') {
+                pathChar.add(firstWallIndex-1, 'R');
+                System.out.println("mutated path from (" + iAtFirstWall + ", " + jAtFirstWall + ") = " 
+                + labyrinth[iAtFirstWall][jAtFirstWall] + "; to (" + (iBeforeFirstWall) + ", " + 
+                (jBeforeFirstWall+1) + ") = " + labyrinth[iBeforeFirstWall][jBeforeFirstWall+1]);
+                return fromCharsToPoints(pathChar);
+            }
+        }
+        if (jBeforeFirstWall > 0) {
+            if (labyrinth[iBeforeFirstWall][jBeforeFirstWall-1] == '0' || labyrinth[iBeforeFirstWall][jBeforeFirstWall-1] == 'S') {
+                pathChar.add(firstWallIndex-1, 'L');
+                System.out.println("mutated path from (" + iAtFirstWall + ", " + jAtFirstWall + ") = " 
+                + labyrinth[iAtFirstWall][jAtFirstWall] + "; to (" + (iBeforeFirstWall) + ", " + 
+                (jBeforeFirstWall-1) + ") = " + labyrinth[iBeforeFirstWall][jBeforeFirstWall-1]);
+                return fromCharsToPoints(pathChar);
+            }
+        }
+
+        //return the path converted to points again
+        System.out.println("Mutate error.");
+        return fromCharsToPoints(pathChar);
+    }
+
+    public static ArrayList<Point> crossover(ArrayList<Point> begin, ArrayList<Point> end){
+        ArrayList<Character> crossedPath = new ArrayList<Character>();
+
+        //convert parameters from points to instructions (up, down, left, right)
+        ArrayList<Character> beginChar = fromPointsToChars(begin);
+        ArrayList<Character> endChar = fromPointsToChars(end);
+
+        //take the first half from beginChar and add to crossedPath
+        for (int i = 0; i < beginChar.size()/2; i ++) {
+            crossedPath.add(beginChar.get(i));
+        }
+
+        //take the last half from endChar and add to the end of crossedPath
+        for (int i = endChar.size()/2; i < endChar.size(); i++) {
+            crossedPath.add(endChar.get(i));
+        }
+
+        //return the crossedPath converted from char to points
+        return fromCharsToPoints(crossedPath);
+    }
+
+    public static ArrayList<Point> tournament() {
+        //choose 2 random paths and return the best (based at heuristic) to be dad or mom.
+        Random generator = new Random();
+        int randomIndex1 = generator.nextInt(paths.size());
+        int randomIndex2 = randomIndex1;
+        while (randomIndex1 == randomIndex2) {
+            randomIndex2 = generator.nextInt(paths.size());
+        }
+        if (heuristicPointsForPaths[randomIndex1] > heuristicPointsForPaths[randomIndex2]) {
+            return paths.get(randomIndex1);
+        }
+        return paths.get(randomIndex2);
+    }
+
+    public static ArrayList<Point> elitism() {
+        //returns the best cromossom from the current generation
+        int higherPoints = heuristicPointsForPaths[0];
+        int higherPosition = 0;
+        for (int i = 1; i < heuristicPointsForPaths.length; i++) {
+            if (heuristicPointsForPaths[i] > higherPoints) {
+                higherPoints = heuristicPointsForPaths[i];
+                higherPosition = i;
+            }
+        }
+        return paths.get(higherPosition);
+    }
+
+    public static int solutionPositionInPaths() {
+        for (int i = 0; i < heuristicPointsForPaths.length; i++) {
+            if (heuristicPointsForPaths[i] == maxPoints) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public static void fillHeuristicPointsArray() {
+        for (int i = 0; i < paths.size(); i++) {
+            heuristicPointsForPaths[i] = heuristic(paths.get(i));
+        }
+    }
+
+    public static int heuristic(ArrayList<Point> path){
+        int points = 0;
+        if (containsGoal(path)) {
+            points += maxPoints;
+        }
+        points -= wallsCount(path);
+        return points;
+    }
+
+    public static boolean containsGoal(ArrayList<Point> path) {
+        for (int i = 0; i < path.size(); i++) {
+            Point point = path.get(i);
+            if (labyrinth[point.i][point.j] == 'S') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static int wallsCount(ArrayList<Point> path) {
+        int wallsCount = 0;
+        for (int i = 0; i < path.size(); i++) {
+            Point point = path.get(i);
+            if (labyrinth[point.i][point.j] == '1') {
+                wallsCount++;
+            }
+        }
+        return wallsCount;
     }
 
     public static char[][] readLabyrinth() throws FileNotFoundException{
@@ -60,6 +264,30 @@ public class Main {
         return p;
     }
 
+    public static ArrayList<Point> fromCharsToPoints(ArrayList<Character> path) {
+        ArrayList<Point> pathPoint = new ArrayList<Point>();
+        pathPoint.add(new Point(0, 0));
+        for(int k = 0; k < path.size(); k++) {
+            int i = pathPoint.get(k).i;
+            int j = pathPoint.get(k).j;
+            if (path.get(k) == 'D') {
+                i++;
+            }
+            else if (path.get(k) == 'U') {
+                i--;
+            }
+            else if (path.get(k) == 'R') {
+                j++;
+            }
+            else if (path.get(k) == 'L') {
+                j--;
+            }
+            pathPoint.add(new Point(i, j));
+        }
+
+        return pathPoint;
+    }
+
     public static ArrayList<Character> fromPointsToChars(ArrayList<Point> path){
         ArrayList<Character> pathChar = new ArrayList<Character>();
         for(int i = 1; i < path.size(); i++){
@@ -91,17 +319,6 @@ public class Main {
         return false;
     }
 
- /*   public static boolean hasLoop(ArrayList<Point> path) {
-        for (Point point : path) {
-            int appearances = 0;
-            for (Point point2 : path) {
-                if (point.i == point2.i && point.j == point2.j) appearances++;
-            }
-            if (appearances > 1) return true;
-        }
-        return false;
-    }*/
-
     public static boolean alreadyPassedHere(ArrayList<Point> path, Point point) {
         for (Point point2 : path) {
             if (point.i == point2.i && point.j == point2.j) {
@@ -111,9 +328,22 @@ public class Main {
         return false;
     }
 
+    public static int pathMaxSize(){
+        int maxSize = 0;
+        for (int i = 0; i < labyrinth.length; i++) {
+            for (int j = 0; j < labyrinth[i].length; j++) {
+                if (labyrinth[i][j] != '1') {
+                    //if it isn't a wall we can use it, if we can use it maxSize++
+                    maxSize++;
+                }
+            }
+        }
+        return maxSize;
+    }
+
     public static ArrayList<Point> generateRandomPath(){
         ArrayList<Point> randomPath = new ArrayList<Point>();
-        int sizeLimit = (labyrinthSize*labyrinthSize) - 1;
+        int sizeLimit = pathMaxSize();
         randomPath.add(new Point(0,0));
         int antiStuck = 0;//sometimes it get stuck and needs make a loop to get out of it.
         while(!isGoal(randomPath.get(randomPath.size()-1)) && randomPath.size() != sizeLimit ) {
@@ -189,15 +419,6 @@ public class Main {
 
     public static int manhattanDistanceToGoal(Point point){
         return (labyrinthSize-1-point.i) + (labyrinthSize-1-point.j);
-    }
-
-    public static int wallsCount(ArrayList<Point> path) {
-        //how many walls are in this path
-        int walls = 0;
-        for(int i = 0; i < path.size(); i++) {
-            if (labyrinth[path.get(i).i][path.get(i).j] == '1') walls++;
-        }
-        return walls;
     }
 
     public static void printLabyrinth(char[][] labyrinth){
