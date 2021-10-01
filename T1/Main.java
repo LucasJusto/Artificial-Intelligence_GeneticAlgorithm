@@ -7,17 +7,19 @@ import java.util.ArrayList;
 public class Main {
     static int labyrinthSize = 0;
     static char[][] labyrinth;
-    static int populationSize = 1000;//how many cromossoms for each generation
+    static int populationSize = 2000;//how many cromossoms for each generation
     static ArrayList<ArrayList<Point>> paths = new ArrayList<ArrayList<Point>>();
     static int[] heuristicPointsForPaths = new int[populationSize];
     static int maxPoints = 500;//if a cromossom has this much points we found our answer
-    static int maxGenerations = 10000;//how many generations will be created while we don't find the solution
-    static int mutationPercentage = 50;//mutationPercentage% chance of mutate a cromossom of new generations
+    static int maxGenerations = 1000000;//how many generations will be created while we don't find the solution
+    static int mutationPercentage = 75;//mutationPercentage% chance of mutate a cromossom of new generations
     static boolean printCrossover = false;
-    static boolean printElitism = true;
+    static boolean printElitism = false;
     static boolean printMutations = false;
     static boolean printTournament = false;
-
+    static long pauseTimeBetweenGenerations = 0;//(in milliseconds) pause to read prints in between each generation.
+    static int elitismPointsAtFirstGeneration = 0;
+    static int elitismPointsAtLastGeneration = 0;
     public static void main(String[] args) throws FileNotFoundException{
         labyrinth = readLabyrinth();
         runGeneticAlgorithm();
@@ -37,13 +39,21 @@ public class Main {
         while(solution.size() == 0 && currentGeneration <= maxGenerations) {
             System.out.println("At generation: " + currentGeneration);
             fillHeuristicPointsArray();
+            int bestPoints = heuristic(elitism());
+            if (currentGeneration == 1) {
+                elitismPointsAtFirstGeneration = bestPoints;
+            }
+            else if (currentGeneration == maxGenerations) {
+                elitismPointsAtLastGeneration = bestPoints;
+            }
             if (printElitism) {
                 printPath(elitism());
-                System.out.println("Heuristic: " + heuristic(elitism()));
+                System.out.println("Heuristic: " + bestPoints);
             }
             int finish = solutionPositionInPaths();
             //if finish return is higher than 0 we found a solution and will finish the algorithm printing solution
             if (finish > 0) {
+                elitismPointsAtLastGeneration = bestPoints;
                 System.out.print("Solution found at position " + finish + ":");
                 solution = paths.get(finish);
                 break;
@@ -60,34 +70,47 @@ public class Main {
                     ArrayList<Point> parent1 = tournament();
                     ArrayList<Point> parent2 = tournament();
                     //add the first half of parent1 + the last half of parent 2 to next generation
-                    ArrayList<Point> crossover1 = crossover(parent1, parent2);
+                    ArrayList<ArrayList<Point>> crossover = crossover(parent1, parent2);
                     if (printCrossover) {
                         System.out.print("crossover1: ");
-                        printPath(crossover1);
+                        printPath(crossover.get(0));
                     }
-                    nextGeneration.add(crossover1);
+                    nextGeneration.add(crossover.get(0));
                     if (nextGeneration.size() < populationSize) {
                         //if the last addition didnt completed the maxPopulationSize...
                         //we also add the first half of parent2 + the last half of parent 1 to next generation
-                        ArrayList<Point> crossover2 = crossover(parent2, parent1);
                         if (printCrossover) {
                             System.out.print("crossover2: ");
-                            printPath(crossover2);
+                            printPath(crossover.get(1));
                         }
-                        nextGeneration.add(crossover2);
+                        nextGeneration.add(crossover.get(1));
                     }
                 }
                 //randomly mutating others
                 Random generator = new Random();
+                boolean protectedFirst = false;//just to not mutate first (because it is elitism)
                 for (ArrayList<Point> path : nextGeneration) {
-                    if (mutationPercentage < generator.nextInt(100)) {
-                        path = mutate(path);
+                    if (protectedFirst) {
+                        if (mutationPercentage < generator.nextInt(100)) {
+                            path = mutate(path);
+                        }
                     }
+                    else {
+                        protectedFirst = true;
+                    }
+                    
                 }
                 //after crossover and mutations we set current generation = nextGeneration
                 paths = nextGeneration;
+                try {
+                    Thread.sleep(pauseTimeBetweenGenerations);
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
+        System.out.println("Started with best heuristic of: " + elitismPointsAtFirstGeneration + " and ended with: " + elitismPointsAtLastGeneration + ".  Best points possible = " + maxPoints);
         //printing solution after getting out of the while through the break command.
         printPath(solution);
     }
@@ -195,25 +218,39 @@ public class Main {
         return fromCharsToPoints(pathChar);
     }
 
-    public static ArrayList<Point> crossover(ArrayList<Point> begin, ArrayList<Point> end){
-        ArrayList<Character> crossedPath = new ArrayList<Character>();
+    public static ArrayList<ArrayList<Point>> crossover(ArrayList<Point> parent1, ArrayList<Point> parent2){
+        ArrayList<ArrayList<Point>> crossedPaths = new ArrayList<ArrayList<Point>>();
 
         //convert parameters from points to instructions (up, down, left, right)
-        ArrayList<Character> beginChar = fromPointsToChars(begin);
-        ArrayList<Character> endChar = fromPointsToChars(end);
+        ArrayList<Character> parent1Char = fromPointsToChars(parent1);
+        ArrayList<Character> parent2Char = fromPointsToChars(parent2);
 
-        //take the first half from beginChar and add to crossedPath
-        for (int i = 0; i < beginChar.size()/2; i ++) {
-            crossedPath.add(beginChar.get(i));
+        ArrayList<Character> crossedPath1 = new ArrayList<Character>();
+        ArrayList<Character> crossedPath2 = new ArrayList<Character>();
+
+        int size = 0;
+        if (parent1Char.size() < parent2Char.size()) {
+            size = parent1Char.size();
         }
-
-        //take the last half from endChar and add to the end of crossedPath
-        for (int i = endChar.size()/2; i < endChar.size(); i++) {
-            crossedPath.add(endChar.get(i));
+        else {
+            size = parent2Char.size();
         }
+        Random generator = new Random();
 
+        for (int i = 0; i < size; i++) {
+            if (generator.nextInt(2) == 0) {
+                crossedPath1.add(parent1Char.get(i));
+                crossedPath2.add(parent2Char.get(i));
+            }
+            else {
+                crossedPath1.add(parent2Char.get(i));
+                crossedPath2.add(parent1Char.get(i));
+            }
+        }
+        crossedPaths.add(fromCharsToPoints(crossedPath1));
+        crossedPaths.add(fromCharsToPoints(crossedPath2));
         //return the crossedPath converted from char to points
-        return fromCharsToPoints(crossedPath);
+        return crossedPaths;
     }
 
     public static ArrayList<Point> tournament() {
