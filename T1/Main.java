@@ -7,16 +7,17 @@ import java.util.ArrayList;
 public class Main {
     static int labyrinthSize = 0;
     static char[][] labyrinth;
-    static int populationSize = 2000;//how many cromossoms for each generation
+    static int populationSize = 3000;//how many chromossomes for each generation
     static ArrayList<ArrayList<Point>> paths = new ArrayList<ArrayList<Point>>();
     static int[] heuristicPointsForPaths = new int[populationSize];
-    static int maxPoints = 500;//if a cromossom has this much points we found our answer
-    static int maxGenerations = 1000000;//how many generations will be created while we don't find the solution
+    static int maxPoints = 500;//if a chromossome has this much points we found our answer
+    static int maxGenerations = 10000;//how many generations will be created while we don't find the solution
     static int mutationPercentage = 75;//mutationPercentage% chance of mutate a cromossom of new generations
     static boolean printCrossover = false;
-    static boolean printElitism = false;
+    static boolean printElitism = true;
     static boolean printMutations = false;
     static boolean printTournament = false;
+    static boolean printGenerationHeuristicAverage = true;
     static long pauseTimeBetweenGenerations = 0;//(in milliseconds) pause to read prints in between each generation.
     static int elitismPointsAtFirstGeneration = 0;
     static int elitismPointsAtLastGeneration = 0;
@@ -47,8 +48,11 @@ public class Main {
                 elitismPointsAtLastGeneration = bestPoints;
             }
             if (printElitism) {
-                printPath(elitism());
+                printPathChar(fromPointsToChars(elitism()));
                 System.out.println("Heuristic: " + bestPoints);
+            }
+            if (printGenerationHeuristicAverage) {
+                System.out.println(heuristicAverage());
             }
             int finish = solutionPositionInPaths();
             //if finish return is higher than 0 we found a solution and will finish the algorithm printing solution
@@ -75,7 +79,12 @@ public class Main {
                         System.out.print("crossover1: ");
                         printPath(crossover.get(0));
                     }
-                    nextGeneration.add(crossover.get(0));
+                    if (containsGoal(crossover.get(0))) {
+                        nextGeneration.add(filter(crossover.get(0)));
+                    }
+                    else {
+                        nextGeneration.add(crossover.get(0));
+                    }
                     if (nextGeneration.size() < populationSize) {
                         //if the last addition didnt completed the maxPopulationSize...
                         //we also add the first half of parent2 + the last half of parent 1 to next generation
@@ -83,7 +92,12 @@ public class Main {
                             System.out.print("crossover2: ");
                             printPath(crossover.get(1));
                         }
-                        nextGeneration.add(crossover.get(1));
+                        if (containsGoal(crossover.get(1))) {
+                            nextGeneration.add(filter(crossover.get(1)));
+                        }
+                        else {
+                            nextGeneration.add(crossover.get(1));
+                        }
                     }
                 }
                 //randomly mutating others
@@ -98,7 +112,6 @@ public class Main {
                     else {
                         protectedFirst = true;
                     }
-                    
                 }
                 //after crossover and mutations we set current generation = nextGeneration
                 paths = nextGeneration;
@@ -113,6 +126,14 @@ public class Main {
         System.out.println("Started with best heuristic of: " + elitismPointsAtFirstGeneration + " and ended with: " + elitismPointsAtLastGeneration + ".  Best points possible = " + maxPoints);
         //printing solution after getting out of the while through the break command.
         printPath(solution);
+    }
+
+    public static double heuristicAverage(){
+        double sum = 0;
+        for (int heuristic : heuristicPointsForPaths) {
+            sum += heuristic;
+        }
+        return sum/heuristicPointsForPaths.length;
     }
 
     public static ArrayList<Point> filter(ArrayList<Point> path) {
@@ -131,23 +152,22 @@ public class Main {
     }
 
     public static ArrayList<Point> mutate(ArrayList<Point> path) {
-        //search for the first wall at this path
         int wallIndex = 0;
-        int maxTries = 50;
-        int currentTries = 0;
         Random generator = new Random();
-        while (wallIndex == 0 && currentTries < maxTries) {
-            currentTries++;
-            int randomIndex = generator.nextInt(path.size());
-            Point point = path.get(randomIndex);
-            if ((point.i >= 0 && point.i < labyrinthSize) && (point.j >= 0 && point.j < labyrinthSize)){
+        ArrayList<Integer> indexesWithWall = new ArrayList<Integer>();
+
+        for (int i = 0; i < path.size(); i++) {
+            Point point = path.get(i);
+            if ((point.i >= 0 && point.i < labyrinthSize) && (point.j >= 0 && point.j < labyrinthSize)) {
                 if (labyrinth[point.i][point.j] == '1') {
-                    wallIndex = randomIndex;
-                    break;
+                    indexesWithWall.add(i);
                 }
             }
         }
 
+        if (indexesWithWall.size() > 0) {
+            wallIndex = indexesWithWall.get(generator.nextInt(indexesWithWall.size()));
+        }
         //convert the path to instructions (up, down, right, left)
         ArrayList<Character> pathChar = fromPointsToChars(path);
 
@@ -161,7 +181,7 @@ public class Main {
             if ((iBeforeFirstWall < 0 || iBeforeFirstWall > labyrinthSize-1) || (jBeforeFirstWall < 0 || jBeforeFirstWall > labyrinthSize-1)) {
                 //return the path converted to points again
                 if (printMutations) {
-                    System.out.println("Couldnt find a wall to mutate in " + maxTries + " tries.");
+                    //System.out.println("Couldnt find a wall to mutate in " + maxTries + " tries.");
                 }
                 return fromCharsToPoints(pathChar);
             }
@@ -213,7 +233,7 @@ public class Main {
 
         //return the path converted to points again
         if (printMutations) {
-            System.out.println("Couldnt find a wall to mutate in " + maxTries + " tries.");
+            //System.out.println("Couldnt find a wall to mutate in " + maxTries + " tries.");
         }
         return fromCharsToPoints(pathChar);
     }
@@ -315,9 +335,32 @@ public class Main {
         if (containsGoal(path)) {
             points += maxPoints;
         }
+        else {
+            points += (maxPoints/2) - manhattanDistanceToGoal(path.get(path.size()-1));
+        }
         points -= 3 * wallsCount(path);
         points -= 5 * invalidPoints(path);
+        points -= 5 * cicles(path);
         return points;
+    }
+
+    public static int cicles(ArrayList<Point> path) {
+        int cicles = 0;
+
+        for (Point point : path) {
+            int ocurrencies = 0;
+            for (Point point2 : path) {
+                if (point.i == point2.i && point.j == point2.j) {
+                    ocurrencies++;
+                }
+            }
+
+            if (ocurrencies > 1) {
+                cicles++;
+            }
+        }
+
+        return cicles;
     }
 
     public static int invalidPoints(ArrayList<Point> path) {
@@ -561,6 +604,13 @@ public class Main {
     public static void printPath(ArrayList<Point> path) {
         for (Point point : path) {
             System.out.print(point + "  ");
+        }
+        System.out.println("");
+    }
+
+    public static void printPathChar(ArrayList<Character> path) {
+        for (Character character: path) {
+            System.out.print(character + " ");
         }
         System.out.println("");
     }
