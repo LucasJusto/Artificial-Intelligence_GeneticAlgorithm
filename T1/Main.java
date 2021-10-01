@@ -7,11 +7,11 @@ import java.util.ArrayList;
 public class Main {
     static int labyrinthSize = 0;
     static char[][] labyrinth;
-    static int populationSize = 1000;
+    static int populationSize = 1000;//how many cromossoms for each generation
     static ArrayList<ArrayList<Point>> paths = new ArrayList<ArrayList<Point>>();
     static int[] heuristicPointsForPaths = new int[populationSize];
     static int maxPoints = 500;//if a cromossom has this much points we found our answer
-    static int maxGenerations = 10000;
+    static int maxGenerations = 10000;//how many generations will be created while we don't find the solution
     static int mutationPercentage = 50;//mutationPercentage% chance of mutate a cromossom of new generations
     static boolean printCrossover = false;
     static boolean printElitism = true;
