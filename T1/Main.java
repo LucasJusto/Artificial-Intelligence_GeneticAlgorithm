@@ -7,12 +7,16 @@ import java.util.ArrayList;
 public class Main {
     static int labyrinthSize = 0;
     static char[][] labyrinth;
-    static int populationSize = 100;
+    static int populationSize = 1000;
     static ArrayList<ArrayList<Point>> paths = new ArrayList<ArrayList<Point>>();
     static int[] heuristicPointsForPaths = new int[populationSize];
     static int maxPoints = 500;//if a cromossom has this much points we found our answer
-    static int maxGenerations = 500;
-    static int mutationPercentage = 35;//mutationPercentage% chance of mutate a cromossom of new generations
+    static int maxGenerations = 10000;
+    static int mutationPercentage = 50;//mutationPercentage% chance of mutate a cromossom of new generations
+    static boolean printCrossover = false;
+    static boolean printElitism = true;
+    static boolean printMutations = false;
+    static boolean printTournament = false;
 
     public static void main(String[] args) throws FileNotFoundException{
         labyrinth = readLabyrinth();
@@ -26,15 +30,17 @@ public class Main {
         //set solution as an empty array (temporarily)
         ArrayList<Point> solution = new ArrayList<Point>();
 
-        //seting the generation to first
+        //setting the generation to first
         int currentGeneration = 1;
 
         //while we don't have a solution and didnt reach maxGeneration number, iterate to find a solution.
         while(solution.size() == 0 && currentGeneration <= maxGenerations) {
             System.out.println("At generation: " + currentGeneration);
             fillHeuristicPointsArray();
-            printPath(elitism());
-            System.out.println("Heuristic: " + heuristic(elitism()));
+            if (printElitism) {
+                printPath(elitism());
+                System.out.println("Heuristic: " + heuristic(elitism()));
+            }
             int finish = solutionPositionInPaths();
             //if finish return is higher than 0 we found a solution and will finish the algorithm printing solution
             if (finish > 0) {
@@ -54,11 +60,21 @@ public class Main {
                     ArrayList<Point> parent1 = tournament();
                     ArrayList<Point> parent2 = tournament();
                     //add the first half of parent1 + the last half of parent 2 to next generation
-                    nextGeneration.add(crossover(parent1, parent2));
+                    ArrayList<Point> crossover1 = crossover(parent1, parent2);
+                    if (printCrossover) {
+                        System.out.print("crossover1: ");
+                        printPath(crossover1);
+                    }
+                    nextGeneration.add(crossover1);
                     if (nextGeneration.size() < populationSize) {
                         //if the last addition didnt completed the maxPopulationSize...
                         //we also add the first half of parent2 + the last half of parent 1 to next generation
-                        nextGeneration.add(crossover(parent2, parent1));
+                        ArrayList<Point> crossover2 = crossover(parent2, parent1);
+                        if (printCrossover) {
+                            System.out.print("crossover2: ");
+                            printPath(crossover2);
+                        }
+                        nextGeneration.add(crossover2);
                     }
                 }
                 //randomly mutating others
@@ -121,49 +137,61 @@ public class Main {
             pathChar.remove(wallIndex-1);
             if ((iBeforeFirstWall < 0 || iBeforeFirstWall > labyrinthSize-1) || (jBeforeFirstWall < 0 || jBeforeFirstWall > labyrinthSize-1)) {
                 //return the path converted to points again
-                System.out.println("Couldnt find a wall to mutate in " + maxTries + " tries.");
+                if (printMutations) {
+                    System.out.println("Couldnt find a wall to mutate in " + maxTries + " tries.");
+                }
                 return fromCharsToPoints(pathChar);
             }
             if (iBeforeFirstWall < labyrinthSize-1) {
                 if (labyrinth[iBeforeFirstWall+1][jBeforeFirstWall] == '0' || labyrinth[iBeforeFirstWall+1][jBeforeFirstWall] == 'S') {
                     pathChar.add(wallIndex-1, 'D');
-                    System.out.println("mutated path from (" + iAtFirstWall + ", " + jAtFirstWall + ") = " 
-                    + labyrinth[iAtFirstWall][jAtFirstWall] + "; to (" + (iBeforeFirstWall+1) + ", " + 
-                    (jBeforeFirstWall) + ") = " + labyrinth[iBeforeFirstWall+1][jBeforeFirstWall]);
+                    if (printMutations) {
+                        System.out.println("mutated path from (" + iAtFirstWall + ", " + jAtFirstWall + ") = " 
+                        + labyrinth[iAtFirstWall][jAtFirstWall] + "; to (" + (iBeforeFirstWall+1) + ", " + 
+                        (jBeforeFirstWall) + ") = " + labyrinth[iBeforeFirstWall+1][jBeforeFirstWall]);
+                    }
                     return fromCharsToPoints(pathChar);
                 }
             }
             if (iBeforeFirstWall > 0) {
                 if (labyrinth[iBeforeFirstWall-1][jBeforeFirstWall] == '0' || labyrinth[iBeforeFirstWall-1][jBeforeFirstWall] == 'S') {
                     pathChar.add(wallIndex-1, 'U');
-                    System.out.println("mutated path from (" + iAtFirstWall + ", " + jAtFirstWall + ") = " 
-                    + labyrinth[iAtFirstWall][jAtFirstWall] + "; to (" + (iBeforeFirstWall-1) + ", " + 
-                    (jBeforeFirstWall) + ") = " + labyrinth[iBeforeFirstWall-1][jBeforeFirstWall]);
+                    if (printMutations) {
+                        System.out.println("mutated path from (" + iAtFirstWall + ", " + jAtFirstWall + ") = " 
+                        + labyrinth[iAtFirstWall][jAtFirstWall] + "; to (" + (iBeforeFirstWall-1) + ", " + 
+                        (jBeforeFirstWall) + ") = " + labyrinth[iBeforeFirstWall-1][jBeforeFirstWall]);
+                    }
                     return fromCharsToPoints(pathChar);
                 }
             }
             if (jBeforeFirstWall < labyrinthSize-1) {
                 if (labyrinth[iBeforeFirstWall][jBeforeFirstWall+1] == '0' || labyrinth[iBeforeFirstWall][jBeforeFirstWall+1] == 'S') {
                     pathChar.add(wallIndex-1, 'R');
-                    System.out.println("mutated path from (" + iAtFirstWall + ", " + jAtFirstWall + ") = " 
-                    + labyrinth[iAtFirstWall][jAtFirstWall] + "; to (" + (iBeforeFirstWall) + ", " + 
-                    (jBeforeFirstWall+1) + ") = " + labyrinth[iBeforeFirstWall][jBeforeFirstWall+1]);
+                    if (printMutations) {
+                        System.out.println("mutated path from (" + iAtFirstWall + ", " + jAtFirstWall + ") = " 
+                        + labyrinth[iAtFirstWall][jAtFirstWall] + "; to (" + (iBeforeFirstWall) + ", " + 
+                        (jBeforeFirstWall+1) + ") = " + labyrinth[iBeforeFirstWall][jBeforeFirstWall+1]);
+                    }
                     return fromCharsToPoints(pathChar);
                 }
             }
             if (jBeforeFirstWall > 0) {
                 if (labyrinth[iBeforeFirstWall][jBeforeFirstWall-1] == '0' || labyrinth[iBeforeFirstWall][jBeforeFirstWall-1] == 'S') {
                     pathChar.add(wallIndex-1, 'L');
-                    System.out.println("mutated path from (" + iAtFirstWall + ", " + jAtFirstWall + ") = " 
-                    + labyrinth[iAtFirstWall][jAtFirstWall] + "; to (" + (iBeforeFirstWall) + ", " + 
-                    (jBeforeFirstWall-1) + ") = " + labyrinth[iBeforeFirstWall][jBeforeFirstWall-1]);
+                    if (printMutations) {
+                        System.out.println("mutated path from (" + iAtFirstWall + ", " + jAtFirstWall + ") = " 
+                        + labyrinth[iAtFirstWall][jAtFirstWall] + "; to (" + (iBeforeFirstWall) + ", " + 
+                        (jBeforeFirstWall-1) + ") = " + labyrinth[iBeforeFirstWall][jBeforeFirstWall-1]);
+                    }
                     return fromCharsToPoints(pathChar);
                 }
             }
         }
 
         //return the path converted to points again
-        System.out.println("Couldnt find a wall to mutate in " + maxTries + " tries.");
+        if (printMutations) {
+            System.out.println("Couldnt find a wall to mutate in " + maxTries + " tries.");
+        }
         return fromCharsToPoints(pathChar);
     }
 
@@ -196,8 +224,23 @@ public class Main {
         while (randomIndex1 == randomIndex2) {
             randomIndex2 = generator.nextInt(paths.size());
         }
+        if (printTournament) {
+            System.out.print("First random path: ");
+            printPath(paths.get(randomIndex1));
+            System.out.println("Heuristic: " + heuristicPointsForPaths[randomIndex1]);
+
+            System.out.print("Second random path: ");
+            printPath(paths.get(randomIndex2));
+            System.out.println("Heuristic: " + heuristicPointsForPaths[randomIndex2]);
+        }
         if (heuristicPointsForPaths[randomIndex1] > heuristicPointsForPaths[randomIndex2]) {
+            if (printTournament) {
+                System.out.println("The first random path was chosen.");
+            }
             return paths.get(randomIndex1);
+        }
+        if (printTournament) {
+            System.out.println("The second random path was chosen.");
         }
         return paths.get(randomIndex2);
     }
