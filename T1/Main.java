@@ -49,10 +49,10 @@ public class Main {
             }
             if (printElitism) {
                 printPathChar(fromPointsToChars(elitism()));
-                System.out.println("Heuristic: " + bestPoints);
+                System.out.println("Better heuristic: " + bestPoints);
             }
             if (printGenerationHeuristicAverage) {
-                System.out.println(heuristicAverage());
+                System.out.println("Average heuristic for this generation: " + heuristicAverage());
             }
             int finish = solutionPositionInPaths();
             //if finish return is higher than 0 we found a solution and will finish the algorithm printing solution
@@ -180,9 +180,6 @@ public class Main {
             pathChar.remove(wallIndex-1);
             if ((iBeforeFirstWall < 0 || iBeforeFirstWall > labyrinthSize-1) || (jBeforeFirstWall < 0 || jBeforeFirstWall > labyrinthSize-1)) {
                 //return the path converted to points again
-                if (printMutations) {
-                    //System.out.println("Couldnt find a wall to mutate in " + maxTries + " tries.");
-                }
                 return fromCharsToPoints(pathChar);
             }
             if (iBeforeFirstWall < labyrinthSize-1) {
@@ -232,9 +229,6 @@ public class Main {
         }
 
         //return the path converted to points again
-        if (printMutations) {
-            //System.out.println("Couldnt find a wall to mutate in " + maxTries + " tries.");
-        }
         return fromCharsToPoints(pathChar);
     }
 
@@ -425,7 +419,6 @@ public class Main {
     public static ArrayList<ArrayList<Point>> generateFirstGeneration(){
         ArrayList<ArrayList<Point>> p = new ArrayList<ArrayList<Point>>();
         while(p.size() < populationSize) {
-            //System.out.println(paths.size());
             ArrayList<Point> path = generateRandomPath();
 
             if (!pathAlreadyExist(path)) {
