@@ -541,7 +541,7 @@ public class Main {
         }
         return randomPath;
     }
-    
+
     public static Point generateNextRandomPoint(Point lastRandomPoint) {
         Random generator = new Random();
         int nextI = lastRandomPoint.i;
@@ -630,3 +630,55 @@ public class Main {
         System.out.println(" Heuristic: " + heuristicPointsForPaths[index]);
     }
 }
+
+/* fro trying to escape from this path: R R R R D D D D R R D D D D D D R R D R R R 
+I tried changing the generateRandomPath and mutate, but both were in vain. At least I will save it here
+
+public static ArrayList<Point> generateRandomPath(){
+    int sizeLimit = pathMaxSize();
+    ArrayList<Character> pathChar = new ArrayList<Character>();
+    Random generator = new Random();
+    for (int i = 0; i < sizeLimit; i++) {
+        int random = generator.nextInt(4);
+        if (random == 0) {
+            pathChar.add('D');
+        }
+        else if (random == 1) {
+            pathChar.add('U');
+        }
+        else if (random == 2) {
+            pathChar.add('L');
+        }
+        else if (random == 3) {
+            pathChar.add('R');
+        }
+    }
+    return fromCharsToPoints(pathChar);
+}
+
+public static ArrayList<Point> mutate(ArrayList<Point> path) {
+    Random generator = new Random();
+    ArrayList<Character> pathChar = fromPointsToChars(path);
+
+    int index = generator.nextInt(pathChar.size());
+
+    pathChar.remove(index);
+
+    int random = generator.nextInt(4);
+    if (random == 0) {
+        pathChar.add(index, 'D');
+    }
+    else if (random == 1) {
+        pathChar.add(index, 'U');
+    }
+    else if (random == 2) {
+        pathChar.add(index, 'L');
+    }
+    else if (random == 3) {
+        pathChar.add(index, 'R');
+    }
+
+    return fromCharsToPoints(pathChar);
+}
+
+*/
