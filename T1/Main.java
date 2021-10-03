@@ -22,10 +22,10 @@ public class Main {
     //var that only affect the prints, you can set whatever you want at them but not delete it.
     //also remember that as more of this you active, longer the algorithm will take (cause it will do more things).
     static boolean printCrossover = false;
-    static boolean printElitism = false;
-    static boolean printMutations = true;
+    static boolean printElitism = true;
+    static boolean printMutations = false;
     static boolean printTournament = false;
-    static boolean printGenerationHeuristicAverage = false;
+    static boolean printGenerationHeuristicAverage = true;
     static boolean printWholeGeneration = false;
     static long pauseTimeBetweenGenerations = 0;//(in milliseconds) pause to read prints in between each generation.
     
