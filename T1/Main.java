@@ -5,22 +5,30 @@ import java.util.Random;
 import java.util.ArrayList;
 
 public class Main {
-    static int labyrinthSize = 0;
-    static char[][] labyrinth;
+    //vars to controll the algorithm. change them if you know what you are doing.
     static int populationSize = 3000;//how many chromossomes for each generation
-    static ArrayList<ArrayList<Point>> paths = new ArrayList<ArrayList<Point>>();
-    static int[] heuristicPointsForPaths = new int[populationSize];
-    static int maxPoints = 500;//if a chromossome has this much points we found our answer
     static int maxGenerations = 10000;//how many generations will be created while we don't find the solution
     static int mutationPercentage = 75;//mutationPercentage% chance of mutate a cromossom of new generations
+
+    //vars that are necessary for the algorithm to work. Do not change them
+    static int labyrinthSize = 0;
+    static char[][] labyrinth;
+    static ArrayList<ArrayList<Point>> paths = new ArrayList<ArrayList<Point>>();
+    static int[] heuristicPointsForPaths = new int[populationSize];
+    static int elitismPointsAtFirstGeneration = 0;
+    static int elitismPointsAtLastGeneration = 0;
+    static int maxPoints = 500;//if a chromossome has this much points we found our answer
+    
+    //var that only affect the prints, you can set whatever you want at them but not delete it.
+    //also remember that as more of this you active, longer the algorithm will take (cause it will do more things).
     static boolean printCrossover = false;
     static boolean printElitism = true;
     static boolean printMutations = false;
     static boolean printTournament = false;
     static boolean printGenerationHeuristicAverage = true;
     static long pauseTimeBetweenGenerations = 0;//(in milliseconds) pause to read prints in between each generation.
-    static int elitismPointsAtFirstGeneration = 0;
-    static int elitismPointsAtLastGeneration = 0;
+    
+
     public static void main(String[] args) throws FileNotFoundException{
         labyrinth = readLabyrinth();
         runGeneticAlgorithm();
