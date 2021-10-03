@@ -6,9 +6,9 @@ import java.util.ArrayList;
 
 public class Main {
     //vars to controll the algorithm. change them if you know what you are doing.
-    static int populationSize = 3000;//how many chromossomes for each generation
+    static int populationSize = 2000;//how many chromossomes for each generation
     static int maxGenerations = 10000;//how many generations will be created while we don't find the solution
-    static int mutationPercentage = 75;//mutationPercentage% chance of mutate a cromossom of new generations
+    static int mutationPercentage = 50;//mutationPercentage% chance of mutate a cromossom of new generations
 
     //vars that are necessary for the algorithm to work. Do not change them
     static int labyrinthSize = 0;
@@ -22,10 +22,11 @@ public class Main {
     //var that only affect the prints, you can set whatever you want at them but not delete it.
     //also remember that as more of this you active, longer the algorithm will take (cause it will do more things).
     static boolean printCrossover = false;
-    static boolean printElitism = true;
-    static boolean printMutations = false;
+    static boolean printElitism = false;
+    static boolean printMutations = true;
     static boolean printTournament = false;
-    static boolean printGenerationHeuristicAverage = true;
+    static boolean printGenerationHeuristicAverage = false;
+    static boolean printWholeGeneration = false;
     static long pauseTimeBetweenGenerations = 0;//(in milliseconds) pause to read prints in between each generation.
     
 
@@ -55,6 +56,11 @@ public class Main {
             else if (currentGeneration == maxGenerations) {
                 elitismPointsAtLastGeneration = bestPoints;
             }
+            if (printWholeGeneration) {
+                for (ArrayList<Point> path : paths) {
+                    printPath(path);
+                }
+            }
             if (printElitism) {
                 printPathChar(fromPointsToChars(elitism()));
                 System.out.println("Better heuristic: " + bestPoints);
@@ -62,6 +68,7 @@ public class Main {
             if (printGenerationHeuristicAverage) {
                 System.out.println("Average heuristic for this generation: " + heuristicAverage());
             }
+
             int finish = solutionPositionInPaths();
             //if finish return is higher than 0 we found a solution and will finish the algorithm printing solution
             if (finish > 0) {
@@ -338,7 +345,7 @@ public class Main {
             points += maxPoints;
         }
         else {
-            points += (maxPoints/2) - manhattanDistanceToGoal(path.get(path.size()-1));
+            points += (maxPoints/2) - (5 * manhattanDistanceToGoal(path.get(path.size()-1)));
         }
         points -= 3 * wallsCount(path);
         points -= 5 * invalidPoints(path);
