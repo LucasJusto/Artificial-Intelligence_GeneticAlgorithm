@@ -682,64 +682,64 @@ public static ArrayList<Point> mutate(ArrayList<Point> path) {
 }
 
 public static ArrayList<Point> tournament() {
-        //choose 2 random paths and return the best (based at heuristic) to be dad or mom.
-        Random generator = new Random();
-        int randomIndex1 = generator.nextInt(paths.size());
-        int randomIndex2 = randomIndex1;
-        while (randomIndex1 == randomIndex2) {
-            randomIndex2 = generator.nextInt(paths.size());
-        }
+    //choose 2 random paths and return the best (based at heuristic) to be dad or mom.
+    Random generator = new Random();
+    int randomIndex1 = generator.nextInt(paths.size());
+    int randomIndex2 = randomIndex1;
+    while (randomIndex1 == randomIndex2) {
+        randomIndex2 = generator.nextInt(paths.size());
+    }
+    if (printTournament) {
+        System.out.print("First random path: ");
+        printPath(paths.get(randomIndex1));
+        System.out.println("Heuristic: " + heuristicPointsForPaths[randomIndex1]);
+
+        System.out.print("Second random path: ");
+        printPath(paths.get(randomIndex2));
+        System.out.println("Heuristic: " + heuristicPointsForPaths[randomIndex2]);
+    }
+    ArrayList<Point> better = paths.get(randomIndex2);
+    ArrayList<Point> worst = paths.get(randomIndex1);
+    if (heuristicPointsForPaths[randomIndex1] > heuristicPointsForPaths[randomIndex2]) {
         if (printTournament) {
-            System.out.print("First random path: ");
-            printPath(paths.get(randomIndex1));
-            System.out.println("Heuristic: " + heuristicPointsForPaths[randomIndex1]);
+            System.out.println("The first random path was chosen.");
+        }
+        better = paths.get(randomIndex1);
+        worst = paths.get(randomIndex2);
+    }
+    else if (printTournament) {
+        System.out.println("The second random path was chosen.");
+    }
+    
+    if (generator.nextInt(10) < 3) {
+        return worst;
+    }
+    return better;
+}
 
-            System.out.print("Second random path: ");
-            printPath(paths.get(randomIndex2));
-            System.out.println("Heuristic: " + heuristicPointsForPaths[randomIndex2]);
+public static ArrayList<Point> mutate(ArrayList<Point> path) {
+    Random generator = new Random();
+    ArrayList<Character> pathChar = fromPointsToChars(path);
+
+    int index = generator.nextInt(pathChar.size());
+
+    pathChar.remove(index);
+    for (int i = 0; i < 1 + generator.nextInt(50); i++) {
+        int random = generator.nextInt(4);
+        if (random == 0) {
+            pathChar.add(index, 'D');
         }
-        ArrayList<Point> better = paths.get(randomIndex2);
-        ArrayList<Point> worst = paths.get(randomIndex1);
-        if (heuristicPointsForPaths[randomIndex1] > heuristicPointsForPaths[randomIndex2]) {
-            if (printTournament) {
-                System.out.println("The first random path was chosen.");
-            }
-            better = paths.get(randomIndex1);
-            worst = paths.get(randomIndex2);
+        else if (random == 1) {
+            pathChar.add(index, 'U');
         }
-        else if (printTournament) {
-            System.out.println("The second random path was chosen.");
+        else if (random == 2) {
+            pathChar.add(index, 'L');
         }
-        
-        if (generator.nextInt(10) < 3) {
-            return worst;
+        else if (random == 3) {
+            pathChar.add(index, 'R');
         }
-        return better;
     }
 
-        public static ArrayList<Point> mutate(ArrayList<Point> path) {
-        Random generator = new Random();
-        ArrayList<Character> pathChar = fromPointsToChars(path);
-    
-        int index = generator.nextInt(pathChar.size());
-    
-        pathChar.remove(index);
-        for (int i = 0; i < 1 + generator.nextInt(50); i++) {
-            int random = generator.nextInt(4);
-            if (random == 0) {
-                pathChar.add(index, 'D');
-            }
-            else if (random == 1) {
-                pathChar.add(index, 'U');
-            }
-            else if (random == 2) {
-                pathChar.add(index, 'L');
-            }
-            else if (random == 3) {
-                pathChar.add(index, 'R');
-            }
-        }
-    
-        return fromCharsToPoints(pathChar);
-    }
+    return fromCharsToPoints(pathChar);
+}
 */
