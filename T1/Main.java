@@ -7,7 +7,7 @@ import java.util.ArrayList;
 public class Main {
     //vars to controll the algorithm. change them if you know what you are doing.
     static int populationSize = 2000;//how many chromossomes for each generation
-    static int maxGenerations = 10000;//how many generations will be created while we don't find the solution
+    static int maxGenerations = 2000;//how many generations will be created while we don't find the solution
     static int mutationPercentage = 50;//mutationPercentage% chance of mutate a cromossom of new generations
 
     //vars that are necessary for the algorithm to work. Do not change them
@@ -741,5 +741,30 @@ public static ArrayList<Point> mutate(ArrayList<Point> path) {
     }
 
     return fromCharsToPoints(pathChar);
+}
+
+public static int consecutiveZeros(ArrayList<Point> path) {
+    int higherNumberOfConsecutiveZeros = 0;
+    int currentNumberOfConsecutiveZeros = 0;
+    for (Point p : path) {
+        if ((p.i >= 0 && p.i < labyrinthSize) && (p.j >= 0 && p.j < labyrinthSize)) {
+            if (labyrinth[p.i][p.j] == 0) {
+                currentNumberOfConsecutiveZeros++;
+            }
+            else {
+                if (currentNumberOfConsecutiveZeros > higherNumberOfConsecutiveZeros) {
+                    higherNumberOfConsecutiveZeros = currentNumberOfConsecutiveZeros;
+                }
+                currentNumberOfConsecutiveZeros = 0;
+            }
+        }
+        else {
+            if (currentNumberOfConsecutiveZeros > higherNumberOfConsecutiveZeros) {
+                higherNumberOfConsecutiveZeros = currentNumberOfConsecutiveZeros;
+            }
+            currentNumberOfConsecutiveZeros = 0;
+        }
+    }
+    return higherNumberOfConsecutiveZeros;
 }
 */
